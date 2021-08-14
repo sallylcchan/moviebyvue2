@@ -27,17 +27,26 @@
                     <input type="checkbox" v-model="movie.added" @change="changeMovie(movie.imdbID, movie.added)"  >
                     <label for="checkbox"> id: {{movie.imdbID}}</label>                    
                     <button @click="showDetail(movie.imdbID)" class="btn btn-primary">Movie Details</button>
+                    <button @click="openEditDialog(movie.imdbID)" class="btn btn-primary">Movie Edit</button>
                 </div>
             </div>
             <p v-if="loading">Data is fetching...</p>
+            <PopupEditor 
+                btnid="popupdlg"
+                v-model:isshowing="ispopupshow"
+                v-model:mymovieid="popupmovieid"
+                @popupclose="popupCloseHandler()"
+                @popupshow="popupShowHandler()"
+            />
         </div>
     </div>
 </template>
 <script>
-//import Ratingstar from '../components/Ratingstar.vue'
+
+import PopupEditor from '../components/PopupMovieEdit.vue'
 export default {
     components: {
-        //Ratingstar,
+        PopupEditor,
     },
     beforeMount() {
         let str = localStorage.getItem('login')
@@ -61,10 +70,22 @@ export default {
         movies: [],
         searchtext: '',
         loading: false,
+        ispopupshow: false,
+        popupmovieid: '',
       }
     },
     methods: {
-           
+        openEditDialog(_id) {
+            console.log('id: ' + _id)
+            this.popupmovieid = _id
+            this.ispopupshow=true
+        },  
+        popupCloseHandler(){
+            this.ispopupshow = false
+        },
+        popupShowHandler() {
+            this.ispopupshow = true
+        },
         findMovie(_id) {
             let obj = {}
             this.movies.forEach(
@@ -89,7 +110,7 @@ export default {
             if (Array.isArray(data.description)) {
                 this.movies = data.description              
                 console.log('fetched (1)')
-            }  
+            }
             const mylink_3 = "https://movieapi.zebramc36.repl.co/movieidlist"
             const res_3 = await fetch(mylink_3)
             const data_3 = await res_3.json()
@@ -97,6 +118,7 @@ export default {
                 this.movies.forEach(
                     (value, index) => {
                         console.log('imdbid: ' + value.imdbID)
+                        this.movies[index].editid = 'btn_' + value.imdbID
                         if ( data_3.list.indexOf(value.imdbID) == -1) {
                             this.movies[index].added = false
                         } else {
@@ -106,8 +128,7 @@ export default {
                 )
                 console.log('fetched (2)')
                 this.loading = false
-            }
-            
+            }            
         },
         showDetail(id) {
             this.$router.push({name: 'Moviedetail', params: {idx: id}})

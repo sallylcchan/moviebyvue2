@@ -31,20 +31,12 @@
     
   },
   methods: {
-    starclick(i) {
-      /*
-        if (this.rating == 1 && i == 1) {
-            let elem = document.getElementById(this.myrate1)
-            elem.checked = false
-            this.myrating = 0
-            return
-        }
-        this.rating = i
-      */
+    starclick(i) {      
      //console.log('mymovieid: ' + this.mymovieid)
      this.$emit('starclicked', i, this.mymovieid)
     }, 
     ratingStyle(j) {
+      //console.log(`ratingStyle (${this.mymovieid}: ${this.myrating})`)
       if (this.myrating > j-1) {
         return {color: '#fd4'}
       }
