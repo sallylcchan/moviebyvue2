@@ -35,7 +35,7 @@
 ## Layout
 Parts of layout under views directory such as header, layout are **single file component** (i.e. SFC). Inside header, there are CurrentWeather as *inner* components.
 
-![Imgur](https://i.imgur.com/uwuCUbG.png)
+![Imgur](./images/layout_movie.png)
 
 ## Component hierarchy
 ![Imgur](https://i.imgur.com/XQSRwAI.png)
