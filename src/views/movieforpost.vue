@@ -14,8 +14,8 @@
             <div class="jumbotron">
                 <h3 class="text-center">Search For Any Movie</h3>
                 <div id="searchForm">
-                    <input type="text" @keyup.enter="fetchMovie" v-model="searchtext" class="form-control" id="searchText" placeholder="Search Movies...">
-                    <button @click="fetchMovie">Search</button>
+                    <input type="text" @keyup.enter="fetchMovie()" v-model="searchtext" class="form-control" id="searchText" placeholder="Search Movies...">
+                    <button @click="fetchMovie()">Search</button>
                 </div>
             </div>
         </div>
@@ -26,8 +26,8 @@
                     <p style="text-align: center;"> {{ movie.Title }} </p>
                     <input type="checkbox" v-model="movie.added" @change="changeMovie(movie.imdbID, movie.added)"  >
                     <label for="checkbox"> id: {{movie.imdbID}}</label>                    
-                    <button @click="showDetail(movie.imdbID)" class="btn btn-primary">Movie Details</button>
-                    <button @click="openEditDialog(movie.imdbID)" class="btn btn-primary">Movie Edit</button>
+                    <button @click="showDetail(movie.imdbID)" class="btn btn-primary">Details</button>&nbsp;
+                    <button v-show="movie.added"  @click="openEditDialog(movie.imdbID)" class="btn btn-info">Edit</button>
                 </div>
             </div>
             <p v-if="loading">Data is fetching...</p>
@@ -35,8 +35,10 @@
                 btnid="popupdlg"
                 v-model:isshowing="ispopupshow"
                 v-model:mymovieid="popupmovieid"
+                v-model:mymovieobj="popupmovieobj"
                 @popupclose="popupCloseHandler()"
                 @popupshow="popupShowHandler()"
+                @popupupdate="popupUpdateHander"
             />
         </div>
     </div>
@@ -72,12 +74,14 @@ export default {
         loading: false,
         ispopupshow: false,
         popupmovieid: '',
+        popupmovieobj: {},
       }
     },
     methods: {
         openEditDialog(_id) {
             console.log('id: ' + _id)
             this.popupmovieid = _id
+            this.popupmovieobj = this.findMovie(_id)
             this.ispopupshow=true
         },  
         popupCloseHandler(){
@@ -86,10 +90,66 @@ export default {
         popupShowHandler() {
             this.ispopupshow = true
         },
+        popupUpdateHander(_obj){
+            console.log('handler')
+            const {imdbid, title, year, type} = _obj
+            //console.log(`imdbid: ${_imdbid}\ntitle:${_title}\nyear:${_year}\ntype:${_type}`)
+            console.log(`vals passing in: ${imdbid}, ${title}, ${year}, ${type}`)            
+            let postdata = JSON.stringify({
+                title: title,
+                year: year,
+                imdbid: imdbid, 
+                type: type,
+                role: 'staff'
+            })
+            console.log('posting data (popupUpdateHandler): ' + postdata)
+            let postreq = {method: 'PUT', mode: 'cors', headers: {'Content-type': 'application/json'}, body: postdata}
+            let posturl = "https://movieapi.zebramc36.repl.co/updatemovie"         
+            fetch(posturl, postreq)
+            .then( (res, err) => {
+                if (err) {
+                    console.log('error' + err)
+                    throw 'communication error'
+                }
+                if (res.status == 201) {
+                    console.log('movie update done')
+                    //console.log(res.json())
+                    return res.json()
+                } 
+                else {
+                    throw 'Post Failed!'
+                }
+            })
+            .then( (json) => {
+                console.log('response after post: ' + JSON.stringify(json))
+                //update the movies list if update successfully
+                let foundidx = this.findMovieIndex(imdbid)
+                if (foundidx != -1) {
+                    let objOrigin = this.movies[foundidx]
+                    let objNew = {
+                        imdbID: objOrigin.imdbID,
+                        Title: title,
+                        Year: year,                        
+                        Type: type,
+                        Poster: objOrigin.Poster,
+                        added: true
+                    }
+                    this.movies.splice(foundidx, 1, objNew)    
+                }
+                //close the modal 
+                this.ispopupshow = false    
+            })
+            .catch( (err) => {
+                if (err) {
+                    this.myError = err
+                }
+            })
+        },
         findMovie(_id) {
             let obj = {}
             this.movies.forEach(
                 (value) => {
+                    console.log("findMovie - imdbID: " + value.imdbID)
                     if (value.imdbID == _id) {
                         obj.title = value.Title
                         obj.year = value.Year
@@ -101,8 +161,26 @@ export default {
             )
             return obj
         },
+        findMovieIndex(_id){
+            let idx = -1
+            this.movies.forEach(
+                (value, Index) => {
+                    console.log("findMovieIndex - imdbID: " + value.imdbID)
+                    if (value.imdbID == _id) {
+                        idx = Index
+                    }
+                }            
+            )
+            return idx
+        },
         async fetchMovie() {
             this.loading = true
+            this.movies = []
+            if (this.searchtext == "") {
+                await this.fetchMovieFromMongodb()
+                //this.loading = false
+                return
+            } 
             const mylink = "https://movieapi.zebramc36.repl.co/searchmovie/" + this.searchtext
             console.log('searchtext: ' + mylink)            
             const res = await fetch(mylink) 
@@ -110,26 +188,62 @@ export default {
             if (Array.isArray(data.description)) {
                 this.movies = data.description              
                 console.log('fetched (1)')
-            }
-            const mylink_3 = "https://movieapi.zebramc36.repl.co/movieidlist"
-            const res_3 = await fetch(mylink_3)
-            const data_3 = await res_3.json()
-            if (Array.isArray(data_3.list)) {                
+            } else {
+                return
+            }                      
+            const mylink_4 = "https://movieapi.zebramc36.repl.co/movielist"
+            const res_4 = await fetch(mylink_4) 
+            const data_4 = await res_4.json()            
+            if (Array.isArray(data_4)) {
+                console.log('Count of data_4: ' + data_4.length)
+                //return the list of imdbid from mongodb
+                const lstImdbid = data_4.map( elem => elem.imdbid )
                 this.movies.forEach(
                     (value, index) => {
-                        console.log('imdbid: ' + value.imdbID)
-                        this.movies[index].editid = 'btn_' + value.imdbID
-                        if ( data_3.list.indexOf(value.imdbID) == -1) {
+                        let foundidx = lstImdbid.indexOf(value.imdbID)
+                        if (foundidx == -1) {
                             this.movies[index].added = false
                         } else {
-                            this.movies[index].added = true
+                            //this.movies[index].added = true
+                            //convert movie found from mongodb to one from network
+                            let objtmp = {
+                                imdbID: data_4[foundidx].imdbid,
+                                Title: data_4[foundidx].title,
+                                Year: data_4[foundidx].year,
+                                Type: data_4[foundidx].type,
+                                Poster: data_4[foundidx].poster,
+                                added: true
+                            }
+                            //replace the movie from network by one from mongodb
+                            this.movies.splice(index, 1, objtmp)
                         }
                     }
                 )
+                this.loading = false                        
                 console.log('fetched (2)')
-                this.loading = false
-            }            
-        },
+            }          
+        },    
+        async fetchMovieFromMongodb(){
+            this.movies = []
+            const mylink_3 = "https://movieapi.zebramc36.repl.co/movielist"
+            const res_3 = await fetch(mylink_3) 
+            const data_3 = await res_3.json()            
+            if (Array.isArray(data_3)) {
+                data_3.forEach(
+                    (value) => {
+                        let objtmp = {
+                                imdbID: value.imdbid,
+                                Title: value.title,
+                                Year: value.year,
+                                Type: value.type,
+                                Poster: value.poster,
+                                added: true
+                            }
+                        this.movies.push(objtmp)
+                    })
+            }
+            this.loading = false
+        },    
         showDetail(id) {
             this.$router.push({name: 'Moviedetail', params: {idx: id}})
         },
