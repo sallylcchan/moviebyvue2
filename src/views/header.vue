@@ -8,9 +8,7 @@
         </div>
         <div class="box-cell box2">
           <div id="nav">
-            <router-link to="/">Welcome</router-link> |
-            <router-link to="/about">About</router-link> |
-            <router-link to="/home">Home</router-link>
+            <router-link to="/">Welcome</router-link>
           </div>
         </div>
         <div class="box-cell box3">
