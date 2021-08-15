@@ -59,7 +59,7 @@
                     <button @click="register" class="btn btn-primary btn-block">
                         Register
                     </button>
-                    <p> {{ message }} </p>
+                    <p style="color: red; font-size: 150%"> {{ message }} </p>
                 </div>
                 <p class="lead mt-4">Have An Account?
                     <router-link to="/login">Login</router-link>
@@ -80,6 +80,7 @@
                 email: '',
                 password: '',
                 password2: '',
+                role: '',
                 lsterror: [],
                 message: '',
                 isvalid: false,
@@ -93,7 +94,10 @@
                     this.login = true
                     return this.$router.push('dashboard')
                 }
-            },           
+            }, 
+            delayReload() {
+                setTimeout( function(){ window.location.reload()},100 )
+            },          
             register() {
                 if (this.name === '' || this.email === '' || this.password === '' || this.password2 === '') {
                     this.message = "Please input all fields!"
@@ -138,13 +142,22 @@
                 .then( json => {
                     this.login = true            
                     this.authkey = json.authkey
+                    this.role = json.role
                     console.log('json(auth): ' + JSON.stringify(json))
                     console.log('authkey(auth): ' + this.authkey)
+                    console.log('role: ' + this.role)
                     this.email = ''
                     this.password = ''
                     localStorage.setItem('login', JSON.stringify(json))
                     //window.location.reload()
-                    return this.$router.push('dashboard')
+                    this.delayReload()
+                    if (this.role == 'customer') {
+                        return this.$router.push('dashboard')
+                    }
+                    if (this.role == 'staff') {
+                        return this.$router.push('movieforpost')
+                    }
+                    return this.$router.push('/')
                 })
                 .catch( err => {
                     if (err) {
