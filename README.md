@@ -41,10 +41,6 @@ Parts of layout under views directory such as header, layout are **single file c
 ![hierarchy](./images/hierarchy01.png)
 ![hierarchy](./images/hierarchy02.png)
 
-## Router View Relation
-![](https://i.imgur.com/XFXE7rO.png)
-
-
 ## Functions
 
 Movie online shop's functions are archived by different views. As corresponding views are pushed, route-view would be replaced by different views.
