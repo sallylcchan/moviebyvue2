@@ -1,17 +1,19 @@
 <template>
     <div class="outermost">
-        <button v-bind:id="btnid" v-on:click="openModal()" style="width:auto;display:block;">Edit</button>
+        <button v-bind:id="btnid" v-on:click="openModal()" style="width:auto;display:none;">Edit</button>
         <div v-show="isshowing" class="modal">
             <div class="modal-content animate">
                 <div class="imgcontainer">
                     <span @click="closeModal()" class="close" title="Close Modal">&times;</span>
-                    <img src="https://www.w3schools.com/howto/img_avatar2.png" alt="Avatar" class="avatar">
                 </div>
                 <div class="container">
-                    <label for="uname"><b>Username</b></label>
-                    <input type="text" placeholder="Enter Username" name="uname" required>
-                    <label for="psw"><b>Password</b></label>
-                    <input type="password" placeholder="Enter Password" name="psw" required>        
+                    <label><b>Movie Id: {{ mymovieid }}</b></label><br/>
+                    <label for="title"><b>Movie title</b></label>
+                    <input type="text" v-bind:value="mymovieobj.title" @input="changeTitle" placeholder="Movie title" name="title" required>
+                    <label for="year"><b>Movie year</b></label>
+                    <input type="text" v-bind:value="mymovieobj.year" @input="changeYear" placeholder="Movie year" name="year" required>
+                    <label for="type"><b>Movie type</b></label>
+                    <input type="text" v-bind:value="mymovieobj.type" @input="changeType" placeholder="Movie type" name="type" required>
                     <button v-on:click="movieupdate()">Edit Movie</button>                    
                 </div>
             </div>
@@ -24,24 +26,36 @@
         components: {
      
         },
-        props: ['btnid', 'isshowing','mymovieid'],        
+        props: ['btnid', 'isshowing','mymovieid','mymovieobj'],        
         data() {
             return {
-                //isShown: false,    
+                mytitle: '',
+                myyear: '',
+                mytype: '',    
             }
         },
         methods: {
             closeModal() {
                 //this.isShown = false
-                this.$emit('popupclose', this.mymovieid)        
+                this.$emit('popupclose')        
             },
             openModal() {
                 //this.isShown = true
-                this.$emit('popupshow', this.mymovieid)
+                this.$emit('popupshow')
             },
             movieupdate() {
-                
-            }
+                let objSend = {imdbid: this.mymovieid, title: this.mytitle, year: this.myyear, type: this.mytype}
+                this.$emit('popupupdate', objSend)
+            },
+            changeTitle(event) {
+                this.mytitle = event.target.value
+            },
+            changeYear(event) {
+                this.myyear = event.target.value
+            },
+            changeType(event) {
+                this.mytype = event.target.value
+            },
         }
     }
 </script>
