@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h1 class="mt-4">Dashboard</h1>
+        <h1 class="mt-4">Dashboard</h1><div style="float:right;"><router-link to="/bookmarkpage">Bookmark Page</router-link></div>
     </div>
     <div>        
         <div class="container">
